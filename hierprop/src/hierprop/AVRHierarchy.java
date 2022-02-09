@@ -103,7 +103,6 @@ import java.util.ArrayList;
          }
          
     static double[] proportion(double[] y){
-        double[] prop=new double[y.length];
         //void proizv(double *y,double*dy_r,int n,double h)
         int i=0;
         int n=Params.getK_oznaka();
@@ -130,6 +129,7 @@ import java.util.ArrayList;
     for(i=1;i<n-6;i++)
     {
     dy_t[i]=(dy1[i-1]+dy2[i-1]/2-dy3[i-1]/6+dy4[i-1]/12-dy5[i-1]/20+dy6[i-1]/30);
+    dy_t[0]=0;
     dy_grub[i]=(y[i+1]-y[i]);// without div h
     }
     return dy_t;
@@ -169,10 +169,13 @@ import java.util.ArrayList;
     }
 
     private static int[][] getBMed(double[] d, double[][] etN) {
+        d[0]=0;
+        
         int[][] matr=new int[Params.getK_realiz()][Params.getK_oznaka()];
         for(int j=0;j<Params.getK_realiz();j++){
+        etN[j][0]=0;
             for(int i=0;i<Params.getK_oznaka();i++){
-            if(d[i]==etN[j][i]){
+            if(Math.round(d[i]*3)/3==Math.round(etN[j][i]*3)/3){
             matr[j][i]=1;
         }
             else{matr[j][i]=0;}
@@ -185,14 +188,19 @@ import java.util.ArrayList;
         int mind=Params.getK_oznaka();
         SignalClass out=null;
         for(SignalClass r:temp){
+            System.out.println("Counting "+r.id);
             for(SignalClass n:temp){
-                if(!r.equals(n)){
+                System.out.print(" to "+n.id);
+                if(r.id!=n.id){
                 Para t=new Para(r.id,n.id);
+                System.out.println("Para "+r.id+" to "+n.id+" distance="+Methods.calculeteDistance(r.getEtalon(), n.getEtalon()));
                 t.dist=Methods.calculeteDistance(r.getEtalon(), n.getEtalon());
                 if(t.dist>mind){mind=t.dist;out=n;}
             }
             }
+        System.out.println("For class:"+r.name+" closest is - "+out.name);
         }
+        
     return out;
     }
 
