@@ -8,7 +8,7 @@ import java.util.ArrayList;
     public class AVRHierarchy {
          public static void main(String[] args) throws IOException {
    
-        int[] pcls=new int[10];
+        int[] pcls=new int[15];
         Params Currents = Methods.getInputs();
         ArrayList<SignalClass> rclas = new ArrayList<SignalClass>();
         
@@ -37,6 +37,9 @@ import java.util.ArrayList;
           for(SignalClass r:rclas){
             r.BM=getBMed(base.etN[0],r.etN);
             r.etalon=Methods.getItEtalon(r.BM);
+            for(int t=0;t<Params.getK_oznaka();t++){
+                System.out.print(r.etalon[t]+" ");
+            }System.out.println();
           }
           /*for(SignalClass sc:rclas){
           InputData.writeOutMatr("et"+sc.id+"bin",sc.BM,sc.etalon);
@@ -50,7 +53,7 @@ import java.util.ArrayList;
         
         for(SignalClass r:rclas){
             if(!k.equals(r)){
-        // r.setEtalon(Methods.getItEtalon(r.getBM()));
+            r.setEtalon(Methods.getItEtalon(r.getBM()));
             int dist=Methods.calculeteDistance(k.getEtalon(), r.getEtalon());
             Para idDist=new Para(r.id,dist);
             k.distances.add(idDist);
@@ -65,21 +68,35 @@ import java.util.ArrayList;
         ArrayList<SignalClass> supers=new ArrayList();
          for(int i=0;i<Params.getK_klass()-1;i++){
              SignalClass sc=GetClosest(temp);
-             if(sc.name==null){break;}
+             if(sc.name==null||temp.size()==2){break;}
              System.out.println("Closest: "+sc.ParentA+" and "+sc.ParentB);
              pcls[sc.ParentA]=sc.ParentB;
              pcls[sc.ParentB]=sc.ParentA;
+             System.out.println("Adding metaclass "+sc.name+"and deleting it`s parents to list of "+temp.size());
              supers.add(sc);
+             
+                System.out.println(1);
              temp.remove(getListedClass(temp,sc.ParentA));
+             System.out.println("Dropped from temp list: "+sc.ParentA);
+             
+                System.out.println(2);
              temp.remove(getListedClass(temp,sc.ParentB));
-            
+            System.out.println("Dropped from temp list: "+sc.ParentB);
+             
              if(isListed(processed,sc.ParentA))
             {
-                processed.remove(getListedClass(temp,sc.ParentA));
+                System.out.println(3);
+                processed.remove(getListedClass(processed,sc.ParentA));
+                System.out.println("Dropped from proc list: "+sc.ParentA);
+             
             }
               if(isListed(processed,sc.ParentB))
             {
-                processed.remove(getListedClass(temp,sc.ParentB));
+                
+                System.out.println(4);
+                processed.remove(getListedClass(processed,sc.ParentB));
+                System.out.println("Dropped from proc list: "+sc.ParentB);
+             
             } 
             temp.add(sc);
              all.add(sc);
@@ -89,13 +106,12 @@ import java.util.ArrayList;
                         int dist=Methods.calculeteDistance(rc.getEtalon(), sc.getEtalon());
                         Para idDist=new Para(sc.id,dist);
                         rc.distances.add(idDist);
-              //      System.out.println(rc.id+" -to sc-"+sc.id+" "+idDist.b);
              }
              }
         }
          System.out.println("Start learning");
         for(int k=0;k<10;k++){
-        optRadius(all.get(k),all.get(pcls[k]));
+        optRadius(all.get(k),all.get(all.get(k).Nid));
         Methods.writeOutData(all.get(k));
         System.out.println(k);
         }
@@ -175,39 +191,58 @@ import java.util.ArrayList;
         for(int j=0;j<Params.getK_realiz();j++){
         etN[j][0]=0;
             for(int i=0;i<Params.getK_oznaka();i++){
-            if(Math.round(d[i]*3)/3==Math.round(etN[j][i]*3)/3){
-            matr[j][i]=1;
+            System.out.println(d[i]*100+"<-> "+etN[j][i]*100);
+                if(d[i]*100>=etN[j][i]*100-30 &&d[i]*100<=etN[j][i]*100+30){        
+                matr[j][i]=1;
         }
             else{matr[j][i]=0;}
+            
+            //System.out.print(matr[j][i]+" ");
             }
         }
+            
         return matr;
     }
-
+/**
+ * Generation of new SignalClass with parents of the two closest
+ * From all classes in working space selects two with smallest distance
+ * @param temp list of classes in work now, not all classes in dataset
+ * @return new SignalClass from pair of closest
+ */
     private static SignalClass GetClosest(ArrayList<SignalClass> temp) {
         int mind=Params.getK_oznaka();
         SignalClass out=null;
+        Para selected=null;
         for(SignalClass r:temp){
-            System.out.println("Counting "+r.id);
+            System.out.println("Counting ");
             for(SignalClass n:temp){
-                System.out.print(" to "+n.id);
                 if(r.id!=n.id){
                 Para t=new Para(r.id,n.id);
                 System.out.println("Para "+r.id+" to "+n.id+" distance="+Methods.calculeteDistance(r.getEtalon(), n.getEtalon()));
                 t.dist=Methods.calculeteDistance(r.getEtalon(), n.getEtalon());
-                if(t.dist>mind){mind=t.dist;out=n;}
+                if(t.dist<mind){mind=t.dist;selected=new Para(r.id,n.id);
+                System.out.println(mind+":"+r.id+"/"+n.id);}
             }
+                
             }
-        System.out.println("For class:"+r.name+" closest is - "+out.name);
-        }
-        
+
+        }        
+        for(SignalClass r:temp){
+            for(SignalClass n:temp){
+                if (r.id!=n.id &&selected!=null){
+                if(selected.a ==r.id && selected.b==n.id){out=new SignalClass(r,n);}
+            }
+                
+        }}    
     return out;
     }
 
     private static int getListedClass(ArrayList<SignalClass> temp, int id) {
         int out=-1;
-        for(SignalClass sc:temp){
-           if(sc.id==id){out=id;} 
+        System.out.println("Droping "+id+" from list");
+        for(int i=0;i<temp.size();i++){
+            SignalClass cur=temp.get(i);
+            if(cur.id==id){out=i;}
         }
         return out;
     }
